@@ -23,7 +23,7 @@ app.post("/api/searchStop", async (req, res) => {
                 headers: {
                     "Content-Type": "application/json",
                     "Origin": "https://nammabmtcapp.karnataka.gov.in",
-                    "Referer": "https://nammabmtcapp.karnataka.gov.in/",
+                    "Referer": "https://nammabmtcapp.karnataka.gov.in/"
                 }
             }
         );
@@ -37,7 +37,7 @@ app.post("/api/searchStop", async (req, res) => {
 });
 
 // ===============================================
-// 2) GET TRIP (YOUR MAIN FIXED CODE BELOW)
+// 2) GET TRIP
 // ===============================================
 app.post("/api/getTrip", async (req, res) => {
     const { fromStationId, toStationId } = req.body;
@@ -86,6 +86,10 @@ app.post("/api/getTrip", async (req, res) => {
 });
 
 // ===============================================
-app.listen(3000, () => {
-    console.log("🚍 Server running at http://localhost:3000");
+// 3) FIX FOR RENDER (VERY IMPORTANT)
+// ===============================================
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log("🚍 Server running on port " + PORT);
 });
