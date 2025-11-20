@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BMTC Student Tracker — Any to Any</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+/* --------- Base / Background --------- */
+:root{
+  --accent1: #00eaff;
+  --accent2: #0066ff;
+  --card-bg: rgba(255,255,255,0.06);
+  --glass-border: rgba(255,255,255,0.14);
+  --muted: rgba(255,255,255,0.7);
+}
+body {
+    margin: 0;
+    font-family: 'Poppins', Arial, sans-serif;
+    color: white;
+    background: linear-gradient(180deg,#020214 0%, #040420 60%);
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+    position: relative;
+    -webkit-font-smoothing:antialiased;
+}
+
+/* animated background layers (stars) */
+#stars, #stars2 {
+  position: fixed; inset:0; z-index:-2; pointer-events:none; opacity:0.9;
+  background-repeat: repeat;
+}
+#stars { background-image: url('https://share.google/images/7eyLr1n6hU0m841BO'); animation: move1 220s linear infinite; }
+#stars2 { background-image: url('https://share.google/images/7eyLr1n6hU0m841BO'); animation: move1 420s linear infinite; opacity:0.6; }
+
+@keyframes move1 { from { transform: translateY(0);} to { transform: translateY(-2000px);} }
+
+/* Title */
+.header {
+  display:flex; align-items:center; gap:14px; justify-content:space-between;
+}
+h1 { margin: 6px 0 8px 0; color:var(--accent1); text-shadow:0 0 10px rgba(0,234,255,0.12); font-size:26px; }
+.sub { color: var(--muted); font-size:13px; margin-bottom:12px; }
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  margin-bottom: 18px;
+}
+
+/* inputs row */
+.row { display:flex; gap:12px; align-items:center; }
+.col { flex:1; min-width:0; }
+
+/* input */
+label { display:block; color:var(--muted); font-size:13px; margin-bottom:6px; }
+input[type="text"] {
+  width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03); color:white; outline:none; font-size:15px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+}
+.small-btn {
+  padding:10px 12px; border-radius:10px; border:none; cursor:pointer;
+  background: linear-gradient(180deg,var(--accent1),var(--accent2));
+  color:black; font-weight:700; box-shadow:0 6px 18px rgba(0,120,255,0.12);
+}
+.small-ghost {
+  padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);
+  background:transparent; color:var(--muted); cursor:pointer;
+}
+
+/* suggestions list */
+.suggestions {
+  margin-top:8px; border-radius:10px; overflow:hidden;
+  border:1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(255,255,255,0.02));
+  max-height:260px; overflow:auto;
+}
+.suggestion {
+  padding:10px 12px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.02);
+  color:#e7f9ff;
+}
+.suggestion:hover, .suggestion:focus { background: rgba(0,120,255,0.08); color:white; }
+
+/* action row */
+.actions { display:flex; gap:12px; margin-top:12px; }
+.primary { flex:1; background: linear-gradient(45deg,var(--accent1),var(--accent2)); color:black; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; box-shadow:0 10px 30px rgba(0,160,255,0.12); }
+.secondary { background:transparent; border:1px solid rgba(255,255,255,0.06); padding:12px; border-radius:10px; color:var(--muted); cursor:pointer; }
+
+/* result cards */
+.result-list { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+.result {
+  display:block;
+  border-radius:12px;
+  padding:14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border:1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45), 0 0 18px rgba(0,200,255,0.03) inset;
+}
+.result-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+.tag {
+  display:inline-block; padding:6px 10px; border-radius:8px; font-weight:800;
+  background: linear-gradient(45deg,#ffeb3b,#ff9800); color:#111;
+  box-shadow:0 6px 12px rgba(255,160,0,0.08);
+}
+.route { font-weight:700; color:#dff9ff; font-size:18px; text-shadow:0 0 6px rgba(0,220,255,0.06); }
+.meta { color: #d6f0ff; font-size:14px; }
+
+/* countdown */
+.countdown { font-family: monospace; font-weight:700; color:#001d3d; background:linear-gradient(90deg,#fff,#bff3ff); padding:6px 10px; border-radius:8px; }
+
+/* small text */
+.small { color:var(--muted); font-size:13px; margin-top:6px; }
+
+/* responsiveness */
+@media (max-width:640px){
+  .row { flex-direction:column; }
+  h1 { font-size:22px; }
+  body { padding:14px; }
+}
+
+</style>
+</head>
+<body>
+
+<div id="stars"></div><div id="stars2"></div>
+
+<div class="card header">
+  <div>
+    <h1>🚍 MVJCE — Smart Bus Finder</h1>
+    <div class="sub">Fast, clear and responsive — choose any two stops and get live ETAs</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+    <button id="swapBtn" class="small-btn" title="Swap From/To">Swap ↔</button>
+    <button id="clearBtn" class="small-ghost" title="Clear">Clear</button>
+  </div>
+</div>
+
+<!-- Search card -->
+<div class="card">
+  <div class="row">
+    <div class="col">
+      <label for="fromInput">From</label>
+      <input id="fromInput" type="text" placeholder="Type start stop (e.g. Tin Factory)" autocomplete="off" />
+      <div id="fromSuggestions" class="suggestions" style="display:none;"></div>
+    </div>
+
+    <div style="width:12px;"></div>
+
+    <div class="col">
+      <label for="toInput">To</label>
+      <input id="toInput" type="text" placeholder="Type destination stop (e.g. MVJ College)" autocomplete="off" />
+      <div id="toSuggestions" class="suggestions" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="findBtn" class="primary">Find Routes</button>
+    <button id="favBtn" class="secondary" title="Save favourite">★ Favourite</button>
+  </div>
+
+  <div class="small">Tip: tap a suggestion to auto-fill. Use Swap to quickly change direction.</div>
+</div>
+
+<!-- Results -->
+<div id="results" class="card" style="display:none;">
+  <div id="resultsInner" class="result-list"></div>
+  <div id="noResults" class="small" style="display:none;">No live buses right now. Try peak hours (7–11 AM, 4:30–8 PM).</div>
+</div>
+
+<script>
+/* ======= Configuration ======= */
+const API_SEARCH = "/api/searchStop";
+const API_TRIP = "/api/getTrip";
+const DEBOUNCE_MS = 300;
+
+/* ======= Caching + debounce helpers ======= */
+const cache = new Map();
+function debounce(fn, wait){ let t=null; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+
+/* ======= UI elements ======= */
+const fromInput = document.getElementById("fromInput");
+const toInput = document.getElementById("toInput");
+const fromSuggestions = document.getElementById("fromSuggestions");
+const toSuggestions = document.getElementById("toSuggestions");
+const findBtn = document.getElementById("findBtn");
+const swapBtn = document.getElementById("swapBtn");
+const clearBtn = document.getElementById("clearBtn");
+const resultsCard = document.getElementById("results");
+const resultsInner = document.getElementById("resultsInner");
+const noResults = document.getElementById("noResults");
+
+/* store selected station ids */
+let selectedFrom = null;
+let selectedTo = null;
+
+/* click-outside to close suggestion lists */
+document.addEventListener("click", (e)=>{
+  if (!e.target.closest('#fromSuggestions') && e.target !== fromInput) fromSuggestions.style.display='none';
+  if (!e.target.closest('#toSuggestions') && e.target !== toInput) toSuggestions.style.display='none';
+});
+
+/* keyboard navigation for inputs */
+function createKeyboardSupport(inputEl, suggestionsEl){
+  let idx = -1;
+  inputEl.addEventListener('keydown', (e)=>{
+    const items = suggestionsEl.querySelectorAll('.suggestion');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown'){ idx = Math.min(idx+1, items.length-1); items[idx].focus(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp'){ idx = Math.max(idx-1, 0); items[idx].focus(); e.preventDefault(); }
+    else if (e.key === 'Escape'){ suggestionsEl.style.display='none'; }
+  });
+}
+createKeyboardSupport(fromInput, fromSuggestions);
+createKeyboardSupport(toInput, toSuggestions);
+
+/* ======= Search (debounced) ======= */
+async function fetchStops(q){
+  if (!q || q.trim().length<1) return [];
+  q = q.trim();
+  if (cache.has(q)) return cache.get(q);
+  try {
+    const r = await fetch(API_SEARCH, { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ q }) });
+    const data = await r.json();
+    if (data.ok && Array.isArray(data.stops)){
+      cache.set(q, data.stops);
+      return data.stops;
+    }
+  } catch(e){ console.warn('search error', e); }
+  return [];
+}
+
+const debouncedFrom = debounce(async ()=>{
+  const q = fromInput.value;
+  const list = await fetchStops(q);
+  renderSuggestions(list, fromSuggestions, (item)=>{
+    selectedFrom = item.routeid; // keep same structure as backend expects
+    fromInput.value = item.routename;
+    fromSuggestions.style.display='none';
+  });
+}, DEBOUNCE_MS);
+
+const debouncedTo = debounce(async ()=>{
+  const q = toInput.value;
+  const list = await fetchStops(q);
+  renderSuggestions(list, toSuggestions, (item)=>{
+    selectedTo = item.routeid;
+    toInput.value = item.routename;
+    toSuggestions.style.display='none';
+  });
+}, DEBOUNCE_MS);
+
+fromInput.addEventListener('input', ()=>{
+  selectedFrom = null; debouncedFrom();
+});
+toInput.addEventListener('input', ()=>{
+  selectedTo = null; debouncedTo();
+});
+
+/* render suggestion list */
+function renderSuggestions(listEl, container, onSelect){
+  container.innerHTML = "";
+  if (!listEl || !listEl.length){ container.style.display='none'; return; }
+  listEl.forEach(s=>{
+    const div = document.createElement('div');
+    div.tabIndex = 0;
+    div.className = 'suggestion';
+    div.innerText = `${s.routename} (ID:${s.routeid})`;
+    div.onclick = ()=> onSelect(s);
+    div.onkeydown = (e)=>{ if (e.key==='Enter') onSelect(s); };
+    container.appendChild(div);
+  });
+  container.style.display = 'block';
+}
+
+/* ======= Swap & Clear ======= */
+swapBtn.addEventListener('click', ()=>{
+  // swap values and selected ids
+  const vFrom = fromInput.value, vTo = toInput.value;
+  const idFrom = selectedFrom, idTo = selectedTo;
+  fromInput.value = vTo; toInput.value = vFrom;
+  selectedFrom = idTo; selectedTo = idFrom;
+  // update suggestions visibility
+  fromSuggestions.style.display = toSuggestions.style.display = 'none';
+});
+
+clearBtn.addEventListener('click', ()=>{
+  fromInput.value = ""; toInput.value = ""; selectedFrom = selectedTo = null;
+  fromSuggestions.style.display = toSuggestions.style.display = 'none';
+  resultsCard.style.display = 'none';
+  resultsInner.innerHTML = '';
+});
+
+/* ======= Find routes (main) ======= */
+findBtn.addEventListener('click', async ()=>{
+  // if user hasn't selected suggestions but typed names, attempt a search to get ids
+  if (!selectedFrom && fromInput.value.trim()) {
+    const arr = await fetchStops(fromInput.value);
+    if (arr.length) { selectedFrom = arr[0].routeid; fromInput.value = arr[0].routename; }
+  }
+  if (!selectedTo && toInput.value.trim()) {
+    const arr = await fetchStops(toInput.value);
+    if (arr.length) { selectedTo = arr[0].routeid; toInput.value = arr[0].routename; }
+  }
+
+  if (!selectedFrom || !selectedTo) {
+    alert("Please select both From and To stops (tap a suggestion).");
+    return;
+  }
+
+  // show loader state
+  resultsInner.innerHTML = "<div class='small'>Loading routes...</div>"; resultsCard.style.display='block'; noResults.style.display='none';
+
+  try {
+    const payload = { fromStationId: selectedFrom, toStationId: selectedTo };
+    const r = await fetch(API_TRIP, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await r.json();
+
+    resultsInner.innerHTML = "";
+    if (!data.ok || !data.trips || data.trips.length===0) {
+      noResults.style.display='block';
+      return;
+    }
+    noResults.style.display='none';
+
+    // render trips — sort by earliest ETA (safety)
+    const trips = data.trips.slice().sort((a,b)=>{
+      const ta = new Date(a[0].etaFromStation).getTime();
+      const tb = new Date(b[0].etaFromStation).getTime();
+      return ta - tb;
+    });
+
+    trips.forEach((route, idx)=>{
+      const trip = route[0];
+      const tripId = trip.tripId || `${trip.routeid}-${idx}-${Date.now()}`;
+      const eta = new Date(trip.etaFromStation);
+      const card = document.createElement('div');
+      card.className = 'result';
+
+      const ordinal = (n)=>{
+        if (n===1) return '1ˢᵗ';
+        if (n===2) return '2ⁿᵈ';
+        if (n===3) return '3ʳᵈ';
+        return n+'ᵗʰ';
+      };
+
+      card.innerHTML = `
+        <div class="result-header">
+          <div>
+            <div class="tag">Your ${ordinal(idx+1)} Bus</div>
+            <div style="height:8px"></div>
+            <div class="route">${trip.routeno || 'Route'}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="countdown" id="timer-${tripId}">--:--:--</div>
+            <div class="small" style="margin-top:6px">${trip.duration || ''}</div>
+          </div>
+        </div>
+        <div class="meta"><b>Bus:</b> ${trip.busNo || '—'} &nbsp; • &nbsp; <b>From ETA:</b> ${trip.etaFromStation || '—'}</div>
+        <div class="small">${trip.fromStationName || ''} → ${trip.toStationName || ''}</div>
+      `;
+      resultsInner.appendChild(card);
+      startCountdown(`timer-${tripId}`, eta);
+    });
+
+  } catch(err){
+    console.error(err);
+    resultsInner.innerHTML = "<div class='small'>Error fetching routes — try again.</div>";
+  }
+});
+
+/* ======= Countdown function (reusable) ======= */
+function startCountdown(elementId, eta){
+  function update(){
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const now = new Date();
+    let diff = eta - now;
+    if (diff <= 0) { el.innerText = "Bus Arrived 🚍"; return; }
+    const h = String(Math.floor(diff / 3600000)).padStart(2,'0');
+    const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
+    const s = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
+    el.innerText = `${h}:${m}:${s}`;
+  }
+  update();
+  const iv = setInterval(update, 1000);
+  // clear interval automatically after ETA + 5 min to avoid leaks
+  setTimeout(()=> clearInterval(iv), Math.max(0, eta - new Date()) + (5*60*1000));
+}
+
+/* ======= click a suggestion from code (helper) ======= */
+function attachSuggestionClick(container, onSelect){
+  container.addEventListener('click', (e)=>{
+    const el = e.target.closest('.suggestion');
+    if (!el) return;
+    const idx = Array.from(container.children).indexOf(el);
+    if (typeof onSelect === 'function') onSelect(idx);
+  });
+}
+
+/* ======= small UX niceties: enter triggers find when both filled ======= */
+[fromInput, toInput].forEach(inp=>{
+  inp.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') { e.preventDefault(); findBtn.click(); }
+  });
+});
+
+</script>
+
+</body>
+</html>
