@@ -1,8 +1,10 @@
 const express = require("express");
 const axios = require("axios");
 const path = require("path");
+const cors = require("cors");   // ✅ ADDED
 
 const app = express();
+app.use(cors());                // ✅ ADDED
 app.use(express.json());
 app.use(express.static("public"));
 
@@ -74,4 +76,8 @@ app.get("*", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("🚍 Server running on port", PORT));
+
+// 🔥 FIXED LINE BELOW 🔥
+app.listen(PORT, () => 
+    console.log(`🚍 Server running at http://localhost:${PORT}`)
+);
